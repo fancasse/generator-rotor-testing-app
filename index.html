@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generator Rotor Testing App</title>
+<style>
+:root {
+  --primary: #1a5276;
+  --secondary: #2980b9;
+  --accent: #e67e22;
+  --success: #27ae60;
+  --danger: #e74c3c;
+  --warning: #f39c12;
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --text: #2c3e50;
+  --text-light: #7f8c8d;
+  --border: #dce1e8;
+  --shadow: 0 2px 16px rgba(0,0,0,0.08);
+  --radius: 10px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+body.rtl { direction: rtl; text-align: right; font-family: 'Segoe UI', 'Noto Sans Arabic', Tahoma, sans-serif; }
+
+/* Top Bar */
+.topbar {
+  background: linear-gradient(135deg, #0d2b45, #1a5276);
+  color: #fff;
+  padding: 12px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+.topbar .logo { display: flex; align-items: center; gap: 10px; }
+.topbar .logo h1 { font-size: 1.1rem; font-weight: 600; }
+.lang-switch { display: flex; gap: 4px; }
+.lang-btn {
+  background: rgba(255,255,255,0.12); border: none; color: #fff;
+  padding: 5px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem;
+  font-weight: 600; transition: all 0.2s;
+}
+.lang-btn:hover { background: rgba(255,255,255,0.25); }
+.lang-btn.active { background: #fff; color: var(--primary); }
+
+/* Layout */
+.app-container { max-width: 1100px; margin: 0 auto; padding: 20px 16px 40px; }
+
+/* Tabs */
+.tabs {
+  display: flex; gap: 4px; flex-wrap: wrap;
+  background: var(--card); padding: 6px; border-radius: var(--radius);
+  box-shadow: var(--shadow); margin-bottom: 20px;
+}
+.tab-btn {
+  padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer;
+  font-size: 0.85rem; font-weight: 600; background: transparent; color: var(--text-light);
+  transition: all 0.2s; flex: 1; min-width: 100px;
+}
+.tab-btn:hover { background: #eef2f7; color: var(--text); }
+.tab-btn.active { background: var(--primary); color: #fff; box-shadow: 0 2px 8px rgba(26,82,118,0.3); }
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Cards */
+.card {
+  background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+  padding: 24px; margin-bottom: 16px; border: 1px solid var(--border);
+}
+.card h2 {
+  font-size: 1.15rem; color: var(--primary); margin-bottom: 12px;
+  padding-bottom: 8px; border-bottom: 3px solid var(--accent);
+}
+.card h3 { font-size: 1rem; color: var(--secondary); margin: 16px 0 8px; }
+.card p, .card label { font-size: 0.9rem; margin-bottom: 6px; }
+.card .sub { color: var(--text-light); font-size: 0.82rem; }
+
+/* SVG container */
+.diagram-box {
+  background: #fafbfc; border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; margin: 12px 0; text-align: center; overflow-x: auto;
+}
+.diagram-box svg { max-width: 100%; height: auto; }
+.diagram-box .caption { font-size: 0.8rem; color: var(--text-light); margin-top: 6px; }
+
+/* Form */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; font-size: 0.82rem; font-weight: 600; margin-bottom: 3px; color: var(--text); }
+.form-group input, .form-group select {
+  width: 100%; padding: 8px 10px; border: 1.5px solid var(--border); border-radius: 6px;
+  font-size: 0.9rem; transition: border 0.2s; background: #fff;
+}
+.form-group input:focus { outline: none; border-color: var(--secondary); }
+
+/* Buttons */
+.btn {
+  padding: 8px 20px; border: none; border-radius: 6px; cursor: pointer;
+  font-size: 0.85rem; font-weight: 600; transition: all 0.2s;
+}
+.btn-primary { background: var(--secondary); color: #fff; }
+.btn-primary:hover { background: #1f6da0; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #1e8449; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #c0392b; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--secondary); color: var(--secondary); }
+
+/* Result box */
+.result-box {
+  background: #eaf7ed; border: 1px solid #a9dfbf; border-radius: 6px;
+  padding: 14px 16px; margin: 10px 0; display: none;
+}
+.result-box.show { display: block; }
+.result-box .value { font-size: 1.3rem; font-weight: 700; color: var(--primary); }
+.result-box .label { font-size: 0.82rem; color: var(--text-light); }
+.result-box .badge {
+  display: inline-block; padding: 2px 10px; border-radius: 12px;
+  font-size: 0.75rem; font-weight: 700; margin-top: 4px;
+}
+.badge-pass { background: #d5f5e3; color: #1a7a3a; }
+.badge-fail { background: #fadbd8; color: #b03a2e; }
+.badge-warn { background: #fef9e7; color: #b7950b; }
+
+/* Table */
+.table-wrap { overflow-x: auto; margin: 10px 0; }
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+table th, table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); }
+body.rtl table th, body.rtl table td { text-align: right; }
+table th { background: #eef2f7; font-weight: 600; color: var(--primary); }
+table tr:hover { background: #f8f9fa; }
+
+/* Chart placeholder */
+.chart-box {
+  background: #fafbfc; border: 1px solid var(--border); border-radius: 8px;
+  padding: 20px; margin: 12px 0; text-align: center; min-height: 200px;
+  position: relative; overflow: hidden;
+}
+.chart-box canvas { max-width: 100%; max-height: 300px; }
+
+/* Step list for AC impedance */
+.step-row {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 6px;
+}
+.step-row input { flex: 1; padding: 6px 8px; border: 1.5px solid var(--border); border-radius: 4px; font-size: 0.82rem; }
+.step-row input:focus { outline: none; border-color: var(--secondary); }
+.step-row .step-label { min-width: 50px; font-size: 0.82rem; font-weight: 600; color: var(--text-light); }
+
+/* RSO Trace */
+.rso-svg { width: 100%; max-width: 600px; height: 180px; }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .topbar { flex-direction: column; text-align: center; padding: 10px 12px; }
+  .app-container { padding: 12px 8px 32px; }
+  .card { padding: 16px; }
+  .tabs .tab-btn { min-width: 60px; font-size: 0.75rem; padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">
+    <h1 id="siteTitle">⚡ Rotor Test App</h1>
+  </div>
+  <div class="lang-switch">
+    <button class="lang-btn active" data-lc="en" onclick="switchLang('en')">English</button>
+    <button class="lang-btn" data-lc="fr" onclick="switchLang('fr')">Français</button>
+    <button class="lang-btn" data-lc="ar" onclick="switchLang('ar')">العربية</button>
+  </div>
+</div>
+
+<div class="app-container">
+
+  <!-- Tab Navigation -->
+  <div class="tabs" id="tabNav">
+    <button class="tab-btn active" data-tab="irpi" onclick="switchTab('irpi')">IR &amp; PI</button>
+    <button class="tab-btn" data-tab="dcr" onclick="switchTab('dcr')">DC Resistance</button>
+    <button class="tab-btn" data-tab="acimp" onclick="switchTab('acimp')">AC Impedance</button>
+    <button class="tab-btn" data-tab="rso" onclick="switchTab('rso')">RSO</button>
+  </div>
+
+  <!-- =============== TAB 1: IR & PI =============== -->
+  <div class="panel active" id="panel-irpi">
+
+    <div class="card">
+      <h2 id="irpiTitle">Insulation Resistance &amp; Polarization Index Test</h2>
+      <p id="irpiDesc">Apply 500 VDC to the rotor winding. Record resistance at 1 minute and 10 minutes. PI = R<sub>10min</sub> / R<sub>1min</sub>.</p>
+
+      <!-- SVG Diagram -->
+      <div class="diagram-box">
+        <svg viewBox="0 0 600 260" xmlns="http://www.w3.org/2000/svg">
+          <!-- Megger box -->
+          <rect x="20" y="70" width="120" height="80" rx="6" fill="#1a5276" stroke="#0d2b45" stroke-width="2"/>
+          <text x="80" y="100" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold" id="meggerLabel">MEGGER</text>
+          <text x="80" y="120" text-anchor="middle" fill="#aed6f1" font-size="11" id="meggerVolt">500 VDC</text>
+          <!-- + terminal -->
+          <circle cx="140" cy="90" r="6" fill="#e74c3c" stroke="#c0392b" stroke-width="1.5"/>
+          <text x="155" y="94" fill="#e74c3c" font-size="11" font-weight="bold">+</text>
+          <!-- - terminal -->
+          <circle cx="140" cy="130" r="6" fill="#2c3e50" stroke="#1a252f" stroke-width="1.5"/>
+          <text x="155" y="134" fill="#2c3e50" font-size="11" font-weight="bold">-</text>
+          <!-- Guard terminal -->
+          <circle cx="110" cy="150" r="5" fill="#7f8c8d" stroke="#5d6d7e" stroke-width="1"/>
+          <text x="100" y="168" fill="#7f8c8d" font-size="9" text-anchor="middle">GUARD</text>
+          <!-- Rotor coil -->
+          <rect x="320" y="60" width="140" height="100" rx="50" fill="none" stroke="#e67e22" stroke-width="3" stroke-dasharray="6,3"/>
+          <text x="390" y="100" text-anchor="middle" fill="#e67e22" font-size="12" font-weight="bold" id="rotorLabel1">ROTOR WINDING</text>
+          <text x="390" y="118" text-anchor="middle" fill="#e67e22" font-size="10" id="rotorImp1">(Field Winding)</text>
+          <!-- Ground symbol -->
+          <line x1="320" y1="200" x2="360" y2="200" stroke="#555" stroke-width="2"/>
+          <line x1="330" y1="208" x2="350" y2="208" stroke="#555" stroke-width="2"/>
+          <line x1="335" y1="216" x2="345" y2="216" stroke="#555" stroke-width="2"/>
+          <text x="340" y="235" text-anchor="middle" fill="#555" font-size="10" id="gndLabel1">GROUND</text>
+          <!-- Wire: + to top of coil -->
+          <line x1="146" y1="90" x2="320" y2="80" stroke="#e74c3c" stroke-width="2"/>
+          <!-- Wire: - to ground -->
+          <line x1="146" y1="130" x2="320" y2="200" stroke="#333" stroke-width="2"/>
+          <!-- Guard wire -->
+          <line x1="115" y1="150" x2="320" y2="150" stroke="#7f8c8d" stroke-width="1.5" stroke-dasharray="4,3"/>
+          <text x="220" y="148" fill="#7f8c8d" font-size="9" id="guardLabel1">Guard (optional)</text>
+          <!-- Leakage indicator -->
+          <path d="M 440 80 Q 470 50 500 80" fill="none" stroke="#2980b9" stroke-width="1.5" stroke-dasharray="3,2"/>
+          <text x="500" y="75" fill="#2980b9" font-size="10" id="leakLabel1">Leakage I</text>
+          <!-- Arrow -->
+          <polygon points="500,80 508,76 508,84" fill="#2980b9"/>
+          <!-- Insulation -->
+          <rect x="310" y="55" width="8" height="110" fill="#f5b041" opacity="0.4"/>
+          <text x="300" y="48" fill="#f5b041" font-size="9" id="insLabel1">Insulation</text>
+        </svg>
+        <div class="caption" id="irpiFig">Fig 1 — Megger connection to rotor winding with guard terminal</div>
+      </div>
+
+      <div class="form-group" style="margin-bottom:16px;">
+        <label for="irpiVoltage" id="lblIrpiVoltage">Test Voltage</label>
+        <select id="irpiVoltage" onchange="updateIrpiVoltage()" style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:6px;font-size:0.9rem;background:#fff;">
+          <option value="250">250 VDC</option>
+          <option value="500" selected>500 VDC</option>
+          <option value="5000">5000 VDC</option>
+        </select>
+      </div>
+
+      <div style="margin-top:8px;margin-bottom:12px;font-size:0.82rem;color:var(--text-light);" id="irpiMinIR"></div>
+
+      <h3 id="irpiTimeTitle" style="font-size:0.95rem;color:var(--secondary);margin-bottom:8px;">Time vs. Resistance Data</h3>
+      <p class="sub" id="irpiTimeSub" style="margin-bottom:10px;">Enter insulation resistance readings at each time interval during the 10-minute soak.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:16px;" id="irpiTimeGrid">
+        <!-- Generated by JS -->
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-box" id="irpiChartBox" style="display:none;">
+        <canvas id="irpiChart" height="200"></canvas>
+        <div id="noIrpiChartData" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--text-light);font-size:0.85rem;text-align:center;">Enter resistance values and click "Calculate"</div>
+      </div>
+
+      <button class="btn btn-primary" onclick="calcIRPI()" id="irpiBtn">Calculate PI</button>
+      <button class="btn btn-outline" onclick="clearIRPI()" id="irpiClear" style="margin-left:6px;">Clear</button>
+
+      <div class="result-box" id="irpiResult">
+        <div class="label" id="irpiPiLabel">Polarization Index (PI)</div>
+        <div class="value" id="irpiPiVal">—</div>
+        <div style="margin-top:4px;font-size:0.85rem;color:var(--text-light);" id="irpiDarVal"></div>
+        <div style="margin-top:6px;font-size:0.85rem;color:var(--text-light);" id="irpiPm"></div>
+        <div style="margin-top:8px;">
+          <span class="label" id="irpiVerdictLabel">Verdict</span><br>
+          <span class="badge" id="irpiBadge">—</span>
+        </div>
+        <div style="margin-top:8px;font-size:0.82rem;color:var(--text-light);" id="irpiNote"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =============== TAB 2: DC RESISTANCE =============== -->
+  <div class="panel" id="panel-dcr">
+
+    <div class="card">
+      <h2 id="dcrTitle">DC Resistance Test</h2>
+      <p id="dcrDesc">Measure rotor winding resistance using a 10 A DLRO (Digital Low Resistance Ohmmeter). Record temperature for correction to 25 °C standard.</p>
+
+      <!-- SVG Diagram -->
+      <div class="diagram-box">
+        <svg viewBox="0 0 600 260" xmlns="http://www.w3.org/2000/svg">
+          <!-- DLRO box -->
+          <rect x="20" y="60" width="130" height="90" rx="6" fill="#1a5276" stroke="#0d2b45" stroke-width="2"/>
+          <text x="85" y="92" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">DLRO</text>
+          <text x="85" y="112" text-anchor="middle" fill="#aed6f1" font-size="11">10 A</text>
+          <text x="85" y="128" text-anchor="middle" fill="#aed6f1" font-size="9">Micro-Ohmmeter</text>
+          <!-- C1, P1, P2, C2 terminals -->
+          <text x="155" y="74" fill="#e74c3c" font-size="9" font-weight="bold">C1</text>
+          <circle cx="165" cy="70" r="4" fill="#e74c3c"/>
+          <text x="155" y="98" fill="#f39c12" font-size="9" font-weight="bold">P1</text>
+          <circle cx="165" cy="94" r="4" fill="#f39c12"/>
+          <text x="155" y="122" fill="#3498db" font-size="9" font-weight="bold">P2</text>
+          <circle cx="165" cy="118" r="4" fill="#3498db"/>
+          <text x="155" y="146" fill="#27ae60" font-size="9" font-weight="bold">C2</text>
+          <circle cx="165" cy="142" r="4" fill="#27ae60"/>
+          <!-- Rotor coil -->
+          <rect x="340" y="50" width="140" height="110" rx="55" fill="none" stroke="#e67e22" stroke-width="3"/>
+          <text x="410" y="100" text-anchor="middle" fill="#e67e22" font-size="12" font-weight="bold" id="rotorLabel2">ROTOR WINDING</text>
+          <text x="410" y="116" text-anchor="middle" fill="#e67e22" font-size="10">(Field Coil)</text>
+          <!-- Kelvin 4-wire connections -->
+          <!-- C1 wire to left end -->
+          <line x1="169" y1="70" x2="340" y2="80" stroke="#e74c3c" stroke-width="2"/>
+          <text x="240" y="72" fill="#e74c3c" font-size="9">C1 (Current +)</text>
+          <!-- P1 wire to left end -->
+          <line x1="169" y1="94" x2="340" y2="90" stroke="#f39c12" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="240" y="104" fill="#f39c12" font-size="9">P1 (Sense +)</text>
+          <!-- P2 wire to right end -->
+          <line x1="169" y1="118" x2="480" y2="90" stroke="#3498db" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="490" y="92" fill="#3498db" font-size="9">P2 (Sense -)</text>
+          <!-- C2 wire to right end -->
+          <line x1="169" y1="142" x2="480" y2="80" stroke="#27ae60" stroke-width="2"/>
+          <text x="490" y="78" fill="#27ae60" font-size="9">C2 (Current -)</text>
+          <!-- Legend box -->
+          <rect x="20" y="180" width="180" height="70" rx="4" fill="#f8f9fa" stroke="#dce1e8" stroke-width="1"/>
+          <text x="30" y="198" fill="#555" font-size="9" font-weight="bold" id="legendLabel">Kelvin 4-Wire Method</text>
+          <line x1="30" y1="215" x2="60" y2="215" stroke="#e74c3c" stroke-width="2"/>
+          <text x="65" y="218" fill="#555" font-size="8" id="curLabel">Current leads (C1, C2)</text>
+          <line x1="30" y1="232" x2="60" y2="232" stroke="#f39c12" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="65" y="235" fill="#555" font-size="8" id="senseLabel">Sense leads (P1, P2)</text>
+        </svg>
+        <div class="caption" id="dcrFig">Fig 2 — 4-wire Kelvin connection for DC resistance measurement</div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="dcrMeasured" id="lblDcrVal">Measured Resistance (Ω)</label>
+          <input type="number" id="dcrMeasured" step="0.0001" min="0" placeholder="e.g. 0.2350">
+        </div>
+        <div class="form-group">
+          <label for="dcrTemp" id="lblDcrTemp">Winding Temperature (°C)</label>
+          <input type="number" id="dcrTemp" step="0.1" placeholder="e.g. 35.0">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="calcDCR()" id="dcrBtn">Calculate Corrected Resistance</button>
+      <button class="btn btn-outline" onclick="clearDCR()" id="dcrClear" style="margin-left:6px;">Clear</button>
+
+      <div class="result-box" id="dcrResult">
+        <div class="label" id="dcrCorrLabel">Resistance Corrected to 25 °C</div>
+        <div class="value" id="dcrCorrVal">—</div>
+        <div style="margin-top:6px;font-size:0.82rem;color:var(--text-light);" id="dcrFormula"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =============== TAB 3: AC IMPEDANCE =============== -->
+  <div class="panel" id="panel-acimp">
+
+    <div class="card">
+      <h2 id="acimpTitle">AC Impedance Test</h2>
+      <p id="acimpDesc">Apply AC voltage in 10 V steps (up to 120 V max) across the field winding. Record current at each step. Z = V / I. A step change indicates shorted turns.</p>
+
+      <!-- SVG Diagram -->
+      <div class="diagram-box">
+        <svg viewBox="0 0 620 280" xmlns="http://www.w3.org/2000/svg">
+          <!-- AC Source -->
+          <circle cx="50" cy="120" r="30" fill="#fef9e7" stroke="#e67e22" stroke-width="2"/>
+          <text x="50" y="118" text-anchor="middle" fill="#e67e22" font-size="14">~</text>
+          <text x="50" y="135" text-anchor="middle" fill="#e67e22" font-size="9" font-weight="bold" id="acSrcLabel">AC Source</text>
+          <!-- Variac -->
+          <rect x="100" y="85" width="70" height="70" rx="6" fill="#1a5276" stroke="#0d2b45" stroke-width="2"/>
+          <text x="135" y="112" text-anchor="middle" fill="#fff" font-size="11" font-weight="bold">VARIAC</text>
+          <text x="135" y="128" text-anchor="middle" fill="#aed6f1" font-size="9">0–240 V</text>
+          <!-- Ammeter -->
+          <circle cx="260" cy="100" r="18" fill="#eaf2f8" stroke="#2980b9" stroke-width="2"/>
+          <text x="260" y="96" text-anchor="middle" fill="#2980b9" font-size="8">A</text>
+          <text x="260" y="108" text-anchor="middle" fill="#2980b9" font-size="7">I</text>
+          <!-- Voltmeter -->
+          <circle cx="260" cy="185" r="18" fill="#eaf2f8" stroke="#2980b9" stroke-width="2"/>
+          <text x="260" y="181" text-anchor="middle" fill="#2980b9" font-size="8">V</text>
+          <text x="260" y="193" text-anchor="middle" fill="#2980b9" font-size="7">V</text>
+          <!-- Rotor coil -->
+          <rect x="400" y="65" width="150" height="120" rx="60" fill="none" stroke="#e67e22" stroke-width="3"/>
+          <text x="475" y="120" text-anchor="middle" fill="#e67e22" font-size="12" font-weight="bold" id="rotorLabel3">ROTOR</text>
+          <text x="475" y="138" text-anchor="middle" fill="#e67e22" font-size="10">(Field)</text>
+          <!-- Wires -->
+          <line x1="80" y1="120" x2="100" y2="120" stroke="#555" stroke-width="2"/>
+          <line x1="170" y1="120" x2="242" y2="100" stroke="#555" stroke-width="2"/>
+          <line x1="278" y1="100" x2="400" y2="90" stroke="#555" stroke-width="2"/>
+          <line x1="170" y1="120" x2="242" y2="185" stroke="#555" stroke-width="1.5" stroke-dasharray="4,2"/>
+          <line x1="278" y1="185" x2="400" y2="170" stroke="#555" stroke-width="1.5" stroke-dasharray="4,2"/>
+          <!-- Current arrow -->
+          <polygon points="395,90 405,86 405,94" fill="#555"/>
+          text x="380" y="82" fill="#555" font-size="9" id="curDirLabel">I →</text>
+          <!-- Hysteresis note -->
+          <rect x="20" y="210" width="300" height="55" rx="4" fill="#fef9e7" stroke="#f9e79f" stroke-width="1"/>
+          <text x="30" y="228" fill="#b7950b" font-size="10" font-weight="bold" id="hystNote1">⚠ Do not backtrack if you overshoot</text>
+          <text x="30" y="246" fill="#b7950b" font-size="9" id="hystNote2">Hysteresis will skew the current reading.</text>
+          <text x="30" y="258" fill="#b7950b" font-size="9" id="hystNote3">Always increase voltage monotonically.</text>
+        </svg>
+        <div class="caption" id="acimpFig">Fig 3 — AC impedance test circuit with variac, ammeter &amp; voltmeter</div>
+      </div>
+
+      <!-- Step data table -->
+      <h3 id="stepDataTitle">Step Data (Up &amp; Down)</h3>
+      <p class="sub" id="stepDataSub">Enter voltage and current for each 10 V step. The up/down comparison reveals hysteresis and potential shorted turns.</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <!-- Up steps -->
+        <div>
+          <h4 id="upStepsTitle">⬆ Up Steps</h4>
+          <div id="upSteps"></div>
+          <button class="btn btn-outline" onclick="addStep('up')" style="margin-top:6px;font-size:0.8rem;">+ Add Row</button>
+        </div>
+        <!-- Down steps -->
+        <div>
+          <h4 id="downStepsTitle">⬇ Down Steps</h4>
+          <div id="downSteps"></div>
+          <button class="btn btn-outline" onclick="addStep('down')" style="margin-top:6px;font-size:0.8rem;">+ Add Row</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn btn-success" onclick="calcACImp()" id="acimpBtn">Calculate &amp; Plot</button>
+        <button class="btn btn-danger" onclick="clearACImp()" id="acimpClear">Reset All Data</button>
+      </div>
+
+      <!-- Chart -->
+      <div class="chart-box">
+        <canvas id="acChart" height="250"></canvas>
+        <div id="noChartData" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--text-light);font-size:0.9rem;" id="noChartMsg">Enter data and click "Calculate &amp; Plot"</div>
+      </div>
+
+      <!-- Results -->
+      <div class="result-box" id="acimpResult">
+        <div id="acimpAnalysis"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =============== TAB 4: RSO =============== -->
+  <div class="panel" id="panel-rso">
+
+    <div class="card">
+      <h2 id="rsoTitle">RSO Test (Recurrent Surge Oscillography)</h2>
+      <p id="rsoDesc">Inject high-frequency pulses into one end of the rotor and measure the reflected waveform at the other end. Compare Channel 1 and Channel 2 traces. CH1 − CH2 = 0 for a healthy rotor.</p>
+
+      <!-- SVG Diagram -->
+      <div class="diagram-box">
+        <svg viewBox="0 0 620 280" xmlns="http://www.w3.org/2000/svg">
+          <!-- RSO Tester -->
+          <rect x="15" y="60" width="130" height="90" rx="6" fill="#1a5276" stroke="#0d2b45" stroke-width="2"/>
+          <text x="80" y="98" text-anchor="middle" fill="#fff" font-size="12" font-weight="bold">RSO TESTER</text>
+          <text x="80" y="116" text-anchor="middle" fill="#aed6f1" font-size="9">Pulse Generator</text>
+          <!-- Ch1 and Ch2 labels -->
+          <text x="12" y="58" fill="#e74c3c" font-size="10" font-weight="bold">CH1</text>
+          <text x="115" y="58" fill="#3498db" font-size="10" font-weight="bold">CH2</text>
+          <!-- Ch1 output -->
+          <circle cx="145" cy="78" r="5" fill="#e74c3c"/>
+          <!-- Ch2 input -->
+          <circle cx="145" cy="132" r="5" fill="#3498db"/>
+          <!-- Oscilloscope -->
+          <rect x="430" y="55" width="170" height="100" rx="6" fill="#0d2b45" stroke="#1a5276" stroke-width="2"/>
+          <text x="515" y="78" text-anchor="middle" fill="#aed6f1" font-size="10" font-weight="bold">OSCILLOSCOPE</text>
+          <!-- Screen -->
+          <rect x="442" y="84" width="146" height="58" rx="3" fill="#1a3a5c"/>
+          <!-- Ch1 trace -->
+          <polyline points="442,105 460,105 470,100 480,95 490,95 500,100 510,105 520,105 530,100 540,95 550,95 560,100 570,105 588,105"
+            fill="none" stroke="#2ecc71" stroke-width="1.5"/>
+          <!-- Ch2 trace -->
+          <polyline points="442,115 460,115 470,120 480,125 490,125 500,120 510,115 520,115 530,120 540,125 550,125 560,120 570,115 588,115"
+            fill="none" stroke="#f1c40f" stroke-width="1.5"/>
+          <text x="450" y="140" fill="#2ecc71" font-size="7">CH1</text>
+          <text x="480" y="140" fill="#f1c40f" font-size="7">CH2</text>
+          <!-- Rotor -->
+          <rect x="240" y="55" width="140" height="110" rx="55" fill="none" stroke="#e67e22" stroke-width="3"/>
+          <text x="310" y="105" text-anchor="middle" fill="#e67e22" font-size="11" font-weight="bold" id="rotorLabel4">ROTOR</text>
+          <text x="310" y="120" text-anchor="middle" fill="#e67e22" font-size="9">Winding</text>
+          <!-- Pulse arrow CH1 -> rotor -->
+          <line x1="150" y1="78" x2="240" y2="80" stroke="#e74c3c" stroke-width="2"/>
+          <polygon points="240,80 230,76 230,84" fill="#e74c3c"/>
+          <text x="185" y="72" fill="#e74c3c" font-size="9" id="injLabel">Injection</text>
+          <!-- Rotor -> CH2 -->
+          <line x1="380" y1="130" x2="430" y2="130" stroke="#3498db" stroke-width="2"/>
+          <polygon points="430,130 420,126 420,134" fill="#3498db"/>
+          <text x="400" y="145" fill="#3498db" font-size="9" id="measLabel">Measurement</text>
+          <!-- Short indication -->
+          <rect x="260" y="180" width="280" height="50" rx="4" fill="#eaf7ed" stroke="#a9dfbf" stroke-width="1"/>
+          <text x="400" y="200" text-anchor="middle" fill="#27ae60" font-size="11" font-weight="bold" id="rsoHealthy">✓ Healthy: CH1 − CH2 = 0 (Flat line)</text>
+          <text x="400" y="218" text-anchor="middle" fill="#e74c3c" font-size="11" font-weight="bold" id="rsoFault">✗ Shorted turns: CH1 − CH2 ≠ 0 (Blip appears)</text>
+        </svg>
+        <div class="caption" id="rsoFig">Fig 4 — RSO test setup with dual-channel oscilloscope comparison</div>
+      </div>
+
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="rsoCh1" id="lblRsoCh1">CH1 − CH2 Difference (V)</label>
+          <input type="number" id="rsoCh1" step="0.001" placeholder="e.g. 0.000 (healthy)">
+          <span class="sub" id="rsoCh1Sub">Ideally 0.000 V for a perfect rotor</span>
+        </div>
+        <div class="form-group">
+          <label for="rsoBlip" id="lblRsoBlip">Blip observed on difference trace?</label>
+          <select id="rsoBlip">
+            <option value="">— Select —</option>
+            <option value="no">No — flat line (healthy)</option>
+            <option value="minor">Minor — small deviation</option>
+            <option value="yes">Yes — clear blip (shorted turns likely)</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="calcRSO()" id="rsoBtn">Analyze RSO Result</button>
+      <button class="btn btn-outline" onclick="clearRSO()" style="margin-left:6px;" id="rsoClear">Clear</button>
+
+      <!-- RSO Visual -->
+      <div style="margin-top:16px;">
+        <h4 id="rsoTraceTitle">Difference Trace (CH1 − CH2)</h4>
+        <div class="diagram-box">
+          <svg class="rso-svg" viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+            <!-- Grid -->
+            <line x1="50" y1="30" x2="550" y2="30" stroke="#dce1e8" stroke-width="0.5"/>
+            <line x1="50" y1="80" x2="550" y2="80" stroke="#dce1e8" stroke-width="0.5"/>
+            <line x1="50" y1="130" x2="550" y2="130" stroke="#dce1e8" stroke-width="0.5"/>
+            <!-- Baseline -->
+            <line x1="50" y1="80" x2="550" y2="80" stroke="#aaa" stroke-width="1" stroke-dasharray="4,4"/>
+            <!-- Trace: by default show healthy -->
+            <polyline id="rsoTraceLine" points="50,80 150,80 250,80 350,80 450,80 550,80"
+              fill="none" stroke="#27ae60" stroke-width="2"/>
+            <!-- Blip indicator (hidden by default) -->
+            <circle id="rsoBlipDot" cx="300" cy="40" r="5" fill="#e74c3c" display="none"/>
+            <text id="rsoBlipText" x="300" y="28" text-anchor="middle" fill="#e74c3c" font-size="11" font-weight="bold" display="none">BLIP</text>
+            <text id="rsoTraceLabel" x="300" y="155" text-anchor="middle" fill="#27ae60" font-size="11">✓ Flat line — No shorted turns</text>
+          </svg>
+          <div class="caption" id="rsoDiffCaption">Difference trace CH1 − CH2</div>
+        </div>
+      </div>
+
+      <div class="result-box" id="rsoResult">
+        <div id="rsoAnalysis"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ===== LANGUAGE =====
+const LANG = {
+  en: {
+    siteTitle: '⚡ Rotor Test App',
+    // tabs
+    tabIrpi: 'IR & PI', tabDcr: 'DC Resistance', tabAcimp: 'AC Impedance', tabRso: 'RSO',
+    // IRPI
+    irpiTitle: 'Insulation Resistance & Polarization Index Test',
+    irpiDesc: 'Apply 500 VDC to the rotor winding. Record resistance at 1 minute and 10 minutes. PI = R₁₀ / R₁.',
+    meggerLabel: 'MEGGER', meggerVolt: '500 VDC',
+    rotorLabel1: 'ROTOR WINDING', rotorImp1: '(Field Winding)',
+    gndLabel1: 'GROUND', guardLabel1: 'Guard (optional)', leakLabel1: 'Leakage I', insLabel1: 'Insulation',
+    irpiFig: 'Fig 1 — Megger connection to rotor winding with guard terminal',
+    lblIrpiVoltage: 'Test Voltage',
+    irpiTimeTitle: 'Time vs. Resistance Data',
+    irpiTimeSub: 'Enter insulation resistance readings at each time interval during the 10-minute soak.',
+    lblR1: 'Resistance at 1 min (MΩ)', lblR10: 'Resistance at 10 min (MΩ)',
+    irpiBtn: 'Calculate PI', irpiClear: 'Clear',
+    irpiPiLabel: 'Polarization Index (PI)', irpiVerdictLabel: 'Verdict',
+    irpiMinIR: 'Minimum acceptable IR at {v}: {r} MΩ',
+    irpiNoteOk: 'PI ≥ 2.0 — Good insulation condition.',
+    irpiNoteAccept: 'PI in 1.2–1.5 range — Acceptable if MΩ value is sufficiently high.',
+    irpiNoteLow: 'PI < 1.2 — Investigate further. Possible insulation degradation.',
+    irpiNoteInvalid: 'Enter valid resistance values (R₁₀ > 0, R₁ > 0).',
+    irpiPmLabel: 'R₁₀ = {r10} MΩ  |  Min. required = {min} MΩ  |  Status: {status}',
+    // DCR
+    dcrTitle: 'DC Resistance Test',
+    dcrDesc: 'Measure rotor winding resistance using a 10 A DLRO. Record temperature for correction to 25 °C.',
+    rotorLabel2: 'ROTOR WINDING', dcrFig: 'Fig 2 — 4-wire Kelvin connection for DC resistance',
+    curLabel: 'Current leads (C1, C2)', senseLabel: 'Sense leads (P1, P2)',
+    legendLabel: 'Kelvin 4-Wire Method',
+    lblDcrVal: 'Measured Resistance (Ω)', lblDcrTemp: 'Winding Temperature (°C)',
+    dcrBtn: 'Calculate Corrected Resistance', dcrClear: 'Clear',
+    dcrCorrLabel: 'Resistance Corrected to 25 °C',
+    dcrFormula: 'R₂₅ = R_meas × (234.5 + 25) / (234.5 + T_meas)',
+    // AC Impedance
+    acimpTitle: 'AC Impedance Test',
+    acimpDesc: 'Apply AC voltage in 10 V steps (up to 120 V max). Record current at each step. Z = V / I.',
+    acSrcLabel: 'AC Source', curDirLabel: 'I →',
+    hystNote1: '⚠ Do not backtrack if you overshoot',
+    hystNote2: 'Hysteresis will skew the current reading.',
+    hystNote3: 'Always increase voltage monotonically.',
+    acimpFig: 'Fig 3 — AC impedance test circuit with variac, ammeter & voltmeter',
+    stepDataTitle: 'Step Data (Up & Down)',
+    stepDataSub: 'Enter voltage and current for each 10 V step.',
+    upStepsTitle: '⬆ Up Steps', downStepsTitle: '⬇ Down Steps',
+    addRow: '+ Add Row',
+    acimpBtn: 'Calculate & Plot', acimpClear: 'Reset All Data',
+    noChartMsg: 'Enter data and click "Calculate & Plot"',
+    // RSO
+    rsoTitle: 'RSO Test (Recurrent Surge Oscillography)',
+    rsoDesc: 'Inject HF pulses into one end of the rotor and measure at the other. CH1 − CH2 = 0 for a healthy rotor.',
+    rotorLabel4: 'ROTOR', injLabel: 'Injection', measLabel: 'Measurement',
+    rsoHealthy: '✓ Healthy: CH1 − CH2 = 0 (Flat line)',
+    rsoFault: '✗ Shorted turns: CH1 − CH2 ≠ 0 (Blip appears)',
+    rsoFig: 'Fig 4 — RSO test setup with dual-channel oscilloscope',
+    lblRsoCh1: 'CH1 − CH2 Difference (V)',
+    rsoCh1Sub: 'Ideally 0.000 V for a perfect rotor',
+    lblRsoBlip: 'Blip observed on difference trace?',
+    rsoBtn: 'Analyze RSO Result', rsoClear: 'Clear',
+    rsoTraceTitle: 'Difference Trace (CH1 − CH2)',
+    rsoDiffCaption: 'Difference trace CH1 − CH2',
+    rsoResultHealthy: '✓ No shorted turns detected. Rotor insulation is healthy.',
+    rsoResultMinor: '⚠ Minor deviation detected. Monitor trend. Consider flux probe testing.',
+    rsoResultFault: '✗ Shorted turns detected! Recommend flux probe to locate the fault.',
+    rsoResultInvalid: 'Select a blip observation and enter the difference value.',
+  },
+  fr: {
+    siteTitle: '⚡ Test Rotor App',
+    tabIrpi: 'IR & IP', tabDcr: 'Résist. CC', tabAcimp: 'Imped. CA', tabRso: 'RSO',
+    irpiTitle: 'Résistance d\'isolement et Indice de Polarisation',
+    irpiDesc: 'Appliquer 500 VCC sur l\'enroulement rotor. Mesurer à 1 min et 10 min. IP = R₁₀ / R₁.',
+    meggerLabel: 'MEGGER', meggerVolt: '500 VCC',
+    rotorLabel1: 'ENROULEMENT ROTOR', rotorImp1: '(Inducteur)',
+    gndLabel1: 'TERRE', guardLabel1: 'Garde (optionnel)', leakLabel1: 'Courant fuite', insLabel1: 'Isolation',
+    irpiFig: 'Fig 1 — Connexion Megger à l\'enroulement rotor avec borne de garde',
+    lblIrpiVoltage: 'Tension d\'essai',
+    irpiTimeTitle: 'Données temps vs. résistance',
+    irpiTimeSub: 'Entrez les lectures de résistance d\'isolement à chaque intervalle de temps pendant les 10 minutes.',
+    lblR1: 'Résistance à 1 min (MΩ)', lblR10: 'Résistance à 10 min (MΩ)',
+    irpiBtn: 'Calculer IP', irpiClear: 'Effacer',
+    irpiPiLabel: 'Indice de Polarisation (IP)', irpiVerdictLabel: 'Résultat',
+    irpiMinIR: 'IR minimal acceptable à {v} : {r} MΩ',
+    irpiNoteOk: 'IP ≥ 2,0 — Bon état de l\'isolation.',
+    irpiNoteAccept: 'IP 1,2–1,5 — Acceptable si la valeur MΩ est suffisante.',
+    irpiNoteLow: 'IP < 1,2 — Investiguer. Dégradation possible de l\'isolation.',
+    irpiNoteInvalid: 'Entrez des valeurs valides (R₁₀ > 0, R₁ > 0).',
+    irpiPmLabel: 'R₁₀ = {r10} MΩ  |  Min. requis = {min} MΩ  |  Statut : {status}',
+    dcrTitle: 'Test de Résistance en Courant Continu',
+    dcrDesc: 'Mesurer la résistance rotor avec un DLRO 10 A. Enregistrer la température pour correction à 25 °C.',
+    rotorLabel2: 'ENROULEMENT ROTOR', dcrFig: 'Fig 2 — Connexion Kelvin 4 fils pour résistance CC',
+    curLabel: 'Fils courant (C1, C2)', senseLabel: 'Fils détection (P1, P2)',
+    legendLabel: 'Méthode Kelvin 4 fils',
+    lblDcrVal: 'Résistance mesurée (Ω)', lblDcrTemp: 'Temp. enroulement (°C)',
+    dcrBtn: 'Calculer résist. corrigée', dcrClear: 'Effacer',
+    dcrCorrLabel: 'Résistance corrigée à 25 °C',
+    dcrFormula: 'R₂₅ = R_mes × (234,5 + 25) / (234,5 + T_mes)',
+    acimpTitle: 'Test d\'Impédance en Courant Alternatif',
+    acimpDesc: 'Appliquer tension CA par paliers de 10 V (max 120 V). Enregistrer le courant. Z = V / I.',
+    acSrcLabel: 'Source CA', curDirLabel: 'I →',
+    hystNote1: '⚠ Ne pas revenir en arrière si vous dépassez',
+    hystNote2: 'L\'hystérésis fausse la lecture du courant.',
+    hystNote3: 'Toujours augmenter la tension de façon monotone.',
+    acimpFig: 'Fig 3 — Circuit test impédance CA avec variac, ampèremètre & voltmètre',
+    stepDataTitle: 'Données des paliers (Montée & Descente)',
+    stepDataSub: 'Entrez tension et courant pour chaque palier de 10 V.',
+    upStepsTitle: '⬆ Montée', downStepsTitle: '⬇ Descente',
+    addRow: '+ Ajouter ligne',
+    acimpBtn: 'Calculer & Tracer', acimpClear: 'Tout réinitialiser',
+    noChartMsg: 'Entrez les données et cliquez "Calculer & Tracer"',
+    rsoTitle: 'Test RSO (Oscillographie de Surge Récurrente)',
+    rsoDesc: 'Injecter impulsions HF dans une extrémité du rotor. CH1 − CH2 = 0 pour rotor sain.',
+    rotorLabel4: 'ROTOR', injLabel: 'Injection', measLabel: 'Mesure',
+    rsoHealthy: '✓ Sain: CH1 − CH2 = 0 (ligne droite)',
+    rsoFault: '✗ Spires court-circuitées: CH1 − CH2 ≠ 0 (blip)',
+    rsoFig: 'Fig 4 — Montage RSO avec oscilloscope double voie',
+    lblRsoCh1: 'Différence CH1 − CH2 (V)',
+    rsoCh1Sub: 'Idéalement 0,000 V pour un rotor parfait',
+    lblRsoBlip: 'Blip observé sur trace différence?',
+    rsoBtn: 'Analyser résultat RSO', rsoClear: 'Effacer',
+    rsoTraceTitle: 'Trace différence (CH1 − CH2)',
+    rsoDiffCaption: 'Trace différence CH1 − CH2',
+    rsoResultHealthy: '✓ Aucune spire court-circuitée. Isolation rotor saine.',
+    rsoResultMinor: '⚠ Déviation mineure. Surveiller. Envisager sonde de flux.',
+    rsoResultFault: '✗ Spires court-circuitées détectées! Recommander sonde de flux.',
+    rsoResultInvalid: 'Sélectionnez une observation de blip et entrez la différence.',
+  },
+  ar: {
+    siteTitle: '⚡ تطبيق اختبار الدوار',
+    tabIrpi: 'مقاومة العزل', tabDcr: 'مقاومة DC', tabAcimp: 'معاوقة AC', tabRso: 'RSO',
+    irpiTitle: 'اختبار مقاومة العزل ومعامل الاستقطاب',
+    irpiDesc: 'تطبيق 500 فولت DC على ملف الدوار. تسجيل المقاومة عند دقيقة و10 دقائق. PI = R₁₀ / R₁.',
+    meggerLabel: 'ميجر', meggerVolt: '500 فولت DC',
+    rotorLabel1: 'ملف الدوار', rotorImp1: '(الملف الحقلي)',
+    gndLabel1: 'الأرضي', guardLabel1: 'حماية (اختياري)', leakLabel1: 'تيار التسرب', insLabel1: 'العازل',
+    irpiFig: 'الشكل 1 — توصيل الميجر بملف الدوار مع طرف الحماية',
+    lblIrpiVoltage: 'جهد الاختبار',
+    irpiTimeTitle: 'بيانات الوقت مقابل المقاومة',
+    irpiTimeSub: 'أدخل قراءات مقاومة العزل عند كل فاصل زمني خلال فترة 10 دقائق.',
+    lblR1: 'المقاومة عند دقيقة واحدة (ميجا أوم)', lblR10: 'المقاومة عند 10 دقائق (ميجا أوم)',
+    irpiBtn: 'حساب PI', irpiClear: 'مسح',
+    irpiPiLabel: 'معامل الاستقطاب (PI)', irpiVerdictLabel: 'النتيجة',
+    irpiMinIR: 'الحد الأدنى المقبول لمقاومة العزل عند {v}: {r} ميجا أوم',
+    irpiNoteOk: 'PI ≥ 2.0 — حالة العزل جيدة.',
+    irpiNoteAccept: 'PI في نطاق 1.2–1.5 — مقبول إذا كانت قيمة ميجا أوم عالية كفاية.',
+    irpiNoteLow: 'PI < 1.2 — تحقق أكثر. احتمال تدهور العزل.',
+    irpiNoteInvalid: 'أدخل قيم مقاومة صحيحة (R₁₀ > 0, R₁ > 0).',
+    irpiPmLabel: 'R₁₀ = {r10} MΩ  |  الحد الأدنى = {min} MΩ  |  الحالة: {status}',
+    dcrTitle: 'اختبار مقاومة التيار المستمر',
+    dcrDesc: 'قياس مقاومة ملف الدوار باستخدام DLRO 10 أمبير. تسجيل درجة الحرارة للتصحيح إلى 25 °م.',
+    rotorLabel2: 'ملف الدوار', dcrFig: 'الشكل 2 — توصيل كلفن رباعي الأسلاك لمقاومة DC',
+    curLabel: 'أسلاك التيار (C1, C2)', senseLabel: 'أسلاك الاستشعار (P1, P2)',
+    legendLabel: 'طريقة كلفن رباعية الأسلاك',
+    lblDcrVal: 'المقاومة المقاسة (أوم)', lblDcrTemp: 'درجة حرارة الملف (°م)',
+    dcrBtn: 'حساب المقاومة المصححة', dcrClear: 'مسح',
+    dcrCorrLabel: 'المقاومة مصححة إلى 25 °م',
+    dcrFormula: 'R₂₅ = R_قياس × (234.5 + 25) / (234.5 + T_قياس)',
+    acimpTitle: 'اختبار المعاوقة بالتيار المتردد',
+    acimpDesc: 'تطبيق جهد AC بخطوات 10 فولت (حتى 120 فولت). تسجيل التيار عند كل خطوة. Z = V / I.',
+    acSrcLabel: 'مصدر AC', curDirLabel: 'I →',
+    hystNote1: '⚠ لا تتراجع إذا تجاوزت القيمة المطلوبة',
+    hystNote2: 'التخلفية ستغير قراءة التيار.',
+    hystNote3: 'دائمًا زد الجهد باتجاه واحد.',
+    acimpFig: 'الشكل 3 — دائرة اختبار المعاوقة AC مع الفارياك والأميتر والفولتميتر',
+    stepDataTitle: 'بيانات الخطوات (صعود وهبوط)',
+    stepDataSub: 'أدخل الجهد والتيار لكل خطوة 10 فولت.',
+    upStepsTitle: '⬆ خطوات الصعود', downStepsTitle: '⬇ خطوات الهبوط',
+    addRow: '+ إضافة صف',
+    acimpBtn: 'حساب ورسم', acimpClear: 'إعادة تعيين الكل',
+    noChartMsg: 'أدخل البيانات وانقر "حساب ورسم"',
+    rsoTitle: 'اختبار RSO (رسم ذبذبات النبضات المتكررة)',
+    rsoDesc: 'حقن نبضات عالية التردد في أحد طرفي الدوار. CH1 − CH2 = 0 لدوار سليم.',
+    rotorLabel4: 'الدوار', injLabel: 'حقن', measLabel: 'قياس',
+    rsoHealthy: '✓ سليم: CH1 − CH2 = 0 (خط مستقيم)',
+    rsoFault: '✗ لفات مقصورة: CH1 − CH2 ≠ 0 (ظهور نبضة)',
+    rsoFig: 'الشكل 4 — إعداد اختبار RSO مع راسم ذبذبات ثنائي القناة',
+    lblRsoCh1: 'الفرق CH1 − CH2 (فولت)',
+    rsoCh1Sub: 'من الناحية المثالية 0.000 فولت لدوار مثالي',
+    lblRsoBlip: 'هل لوحظت نبضة على أثر الفرق؟',
+    rsoBtn: 'تحليل نتيجة RSO', rsoClear: 'مسح',
+    rsoTraceTitle: 'أثر الفرق (CH1 − CH2)',
+    rsoDiffCaption: 'أثر الفرق CH1 − CH2',
+    rsoResultHealthy: '✓ لم يتم اكتشاف لفات مقصورة. عزل الدوار سليم.',
+    rsoResultMinor: '⚠ انحراف طفيف. راقب التطور. فكر في استخدام مسبار التدفق.',
+    rsoResultFault: '✗ تم اكتشاف لفات مقصورة! يوصى باستخدام مسبار التدفق لتحديد موقع الخلل.',
+    rsoResultInvalid: 'اختر ملاحظة النبضة وأدخل قيمة الفرق.',
+  }
+};
+
+function switchLang(code) {
+  const l = LANG[code];
+  if (!l) return;
+  document.querySelectorAll('[data-lang]').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll(`[data-lang="${code}"]`).forEach(el => el.classList.add('active'));
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.lang-btn[data-lc="${code}"]`).classList.add('active');
+  document.documentElement.lang = code;
+  document.body.classList.toggle('rtl', code === 'ar');
+  // Apply strings
+  document.getElementById('siteTitle').textContent = l.siteTitle;
+  // Tab buttons
+  const tabBtns = document.querySelectorAll('#tabNav .tab-btn');
+  if (tabBtns[0]) tabBtns[0].textContent = l.tabIrpi;
+  if (tabBtns[1]) tabBtns[1].textContent = l.tabDcr;
+  if (tabBtns[2]) tabBtns[2].textContent = l.tabAcimp;
+  if (tabBtns[3]) tabBtns[3].textContent = l.tabRso;
+  // IRPI card
+  try {
+    document.getElementById('irpiTitle').textContent = l.irpiTitle;
+    document.getElementById('irpiDesc').textContent = l.irpiDesc;
+    document.getElementById('meggerLabel').textContent = l.meggerLabel;
+    document.getElementById('meggerVolt').textContent = l.meggerVolt;
+    document.getElementById('rotorLabel1').textContent = l.rotorLabel1;
+    document.getElementById('rotorImp1').textContent = l.rotorImp1;
+    document.getElementById('gndLabel1').textContent = l.gndLabel1;
+    document.getElementById('guardLabel1').textContent = l.guardLabel1;
+    document.getElementById('leakLabel1').textContent = l.leakLabel1;
+    document.getElementById('insLabel1').textContent = l.insLabel1;
+    document.getElementById('irpiFig').textContent = l.irpiFig;
+    document.getElementById('lblIrpiVoltage').textContent = l.lblIrpiVoltage;
+    if (document.getElementById('irpiTimeTitle')) document.getElementById('irpiTimeTitle').textContent = l.irpiTimeTitle;
+    if (document.getElementById('irpiTimeSub')) document.getElementById('irpiTimeSub').textContent = l.irpiTimeSub;
+    document.getElementById('lblR1').textContent = l.lblR1;
+    document.getElementById('lblR10').textContent = l.lblR10;
+    document.getElementById('irpiBtn').textContent = l.irpiBtn;
+    document.getElementById('irpiClear').textContent = l.irpiClear;
+    document.getElementById('irpiPiLabel').textContent = l.irpiPiLabel;
+    document.getElementById('irpiVerdictLabel').textContent = l.irpiVerdictLabel;
+    // DCR
+    document.getElementById('dcrTitle').textContent = l.dcrTitle;
+    document.getElementById('dcrDesc').textContent = l.dcrDesc;
+    document.getElementById('rotorLabel2').textContent = l.rotorLabel2;
+    document.getElementById('dcrFig').textContent = l.dcrFig;
+    document.getElementById('curLabel').textContent = l.curLabel;
+    document.getElementById('senseLabel').textContent = l.senseLabel;
+    document.getElementById('legendLabel').textContent = l.legendLabel;
+    document.getElementById('lblDcrVal').textContent = l.lblDcrVal;
+    document.getElementById('lblDcrTemp').textContent = l.lblDcrTemp;
+    document.getElementById('dcrBtn').textContent = l.dcrBtn;
+    document.getElementById('dcrClear').textContent = l.dcrClear;
+    document.getElementById('dcrCorrLabel').textContent = l.dcrCorrLabel;
+    document.getElementById('dcrFormula').textContent = l.dcrFormula;
+    // AC Impedance
+    document.getElementById('acimpTitle').textContent = l.acimpTitle;
+    document.getElementById('acimpDesc').textContent = l.acimpDesc;
+    document.getElementById('acSrcLabel').textContent = l.acSrcLabel;
+    document.getElementById('curDirLabel').textContent = l.curDirLabel;
+    document.getElementById('hystNote1').textContent = l.hystNote1;
+    document.getElementById('hystNote2').textContent = l.hystNote2;
+    document.getElementById('hystNote3').textContent = l.hystNote3;
+    document.getElementById('acimpFig').textContent = l.acimpFig;
+    document.getElementById('stepDataTitle').textContent = l.stepDataTitle;
+    document.getElementById('stepDataSub').textContent = l.stepDataSub;
+    document.getElementById('upStepsTitle').textContent = l.upStepsTitle;
+    document.getElementById('downStepsTitle').textContent = l.downStepsTitle;
+    document.getElementById('acimpBtn').textContent = l.acimpBtn;
+    document.getElementById('acimpClear').textContent = l.acimpClear;
+    document.getElementById('noChartMsg').textContent = l.noChartMsg;
+    // RSO
+    document.getElementById('rsoTitle').textContent = l.rsoTitle;
+    document.getElementById('rsoDesc').textContent = l.rsoDesc;
+    document.getElementById('rotorLabel4').textContent = l.rotorLabel4;
+    document.getElementById('injLabel').textContent = l.injLabel;
+    document.getElementById('measLabel').textContent = l.measLabel;
+    document.getElementById('rsoHealthy').textContent = l.rsoHealthy;
+    document.getElementById('rsoFault').textContent = l.rsoFault;
+    document.getElementById('rsoFig').textContent = l.rsoFig;
+    document.getElementById('lblRsoCh1').textContent = l.lblRsoCh1;
+    document.getElementById('rsoCh1Sub').textContent = l.rsoCh1Sub;
+    document.getElementById('lblRsoBlip').textContent = l.lblRsoBlip;
+    document.getElementById('rsoBtn').textContent = l.rsoBtn;
+    document.getElementById('rsoClear').textContent = l.rsoClear;
+    document.getElementById('rsoTraceTitle').textContent = l.rsoTraceTitle;
+    document.getElementById('rsoDiffCaption').textContent = l.rsoDiffCaption;
+  } catch(e) {}
+  // Update voltage-dependent display after language switch
+  try { updateIrpiVoltage(); } catch(e) {}
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`panel-${tab}`).classList.add('active');
+  document.querySelector(`.tab-btn[data-tab="${tab}"]`).classList.add('active');
+}
+
+// ===== IR & PI =====
+const IRPI_TIMES = [
+  { label: '30s', min: 0.5, id: 'irpi_t_30s' },
+  { label: '1 min', min: 1, id: 'irpi_t_1' },
+  { label: '2 min', min: 2, id: 'irpi_t_2' },
+  { label: '3 min', min: 3, id: 'irpi_t_3' },
+  { label: '4 min', min: 4, id: 'irpi_t_4' },
+  { label: '5 min', min: 5, id: 'irpi_t_5' },
+  { label: '6 min', min: 6, id: 'irpi_t_6' },
+  { label: '7 min', min: 7, id: 'irpi_t_7' },
+  { label: '8 min', min: 8, id: 'irpi_t_8' },
+  { label: '9 min', min: 9, id: 'irpi_t_9' },
+  { label: '10 min', min: 10, id: 'irpi_t_10' },
+];
+let irpiChart = null;
+
+function buildIrpiGrid() {
+  const grid = document.getElementById('irpiTimeGrid');
+  grid.innerHTML = '';
+  IRPI_TIMES.forEach(t => {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--text-light);margin-bottom:2px;">${t.label}</label>
+      <input type="number" step="0.01" min="0" id="${t.id}" placeholder="MΩ" style="width:100%;padding:6px 8px;border:1.5px solid var(--border);border-radius:5px;font-size:0.85rem;background:#fff;">
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function getMinIR(voltage) {
+  const kV = voltage / 1000;
+  return Math.max(1, Math.round(kV * 10 * 10) / 10);
+}
+
+function updateIrpiVoltage() {
+  const sel = document.getElementById('irpiVoltage');
+  const v = parseInt(sel.value);
+  const minIR = getMinIR(v);
+  const l = LANG[document.documentElement.lang] || LANG.en;
+  document.getElementById('irpiMinIR').textContent = l.irpiMinIR.replace('{v}', v + ' VDC').replace('{r}', minIR);
+  document.getElementById('meggerVolt').textContent = v + (document.documentElement.lang === 'ar' ? ' فولت DC' : ' VDC');
+}
+
+function getIrpiData() {
+  const data = [];
+  IRPI_TIMES.forEach(t => {
+    const el = document.getElementById(t.id);
+    const val = parseFloat(el.value);
+    if (!isNaN(val) && val > 0) {
+      data.push({ time: t.min, value: val, label: t.label });
+    }
+  });
+  return data.sort((a, b) => a.time - b.time);
+}
+
+function calcIRPI() {
+  const data = getIrpiData();
+  const box = document.getElementById('irpiResult');
+  const chartBox = document.getElementById('irpiChartBox');
+  const l = LANG[document.documentElement.lang] || LANG.en;
+
+  if (data.length < 2) {
+    box.classList.add('show');
+    document.getElementById('irpiPiVal').textContent = '—';
+    document.getElementById('irpiDarVal').textContent = '';
+    document.getElementById('irpiPm').textContent = '';
+    document.getElementById('irpiBadge').textContent = l.irpiNoteInvalid;
+    document.getElementById('irpiBadge').className = 'badge badge-fail';
+    document.getElementById('irpiNote').textContent = 'Enter at least 2 time points (1 min and 10 min required for PI).';
+    chartBox.style.display = 'none';
+    return;
+  }
+
+  // Find R1 and R10
+  const r1 = data.find(d => Math.abs(d.time - 1) < 0.01);
+  const r10 = data.find(d => Math.abs(d.time - 10) < 0.01);
+  const r30s = data.find(d => Math.abs(d.time - 0.5) < 0.01);
+
+  if (!r1 || !r10) {
+    box.classList.add('show');
+    document.getElementById('irpiPiVal').textContent = '—';
+    document.getElementById('irpiDarVal').textContent = '';
+    document.getElementById('irpiPm').textContent = '';
+    document.getElementById('irpiBadge').textContent = 'Missing 1 min or 10 min reading';
+    document.getElementById('irpiBadge').className = 'badge badge-fail';
+    document.getElementById('irpiNote').textContent = 'Both 1-minute and 10-minute readings are required for PI calculation.';
+    chartBox.style.display = 'none';
+    return;
+  }
+
+  const voltage = parseInt(document.getElementById('irpiVoltage').value);
+  const minIR = getMinIR(voltage);
+  const pi = r10.value / r1.value;
+  const dar = r30s ? r1.value / r30s.value : null;
+
+  document.getElementById('irpiPiVal').textContent = pi.toFixed(2);
+  if (dar !== null) {
+    document.getElementById('irpiDarVal').textContent = 'DAR (R₁/R₃₀s) = ' + dar.toFixed(2);
+  } else {
+    document.getElementById('irpiDarVal').textContent = 'DAR: enter 30s reading';
+  }
+
+  // IR status at 10 min
+  let irOk = r10.value >= minIR;
+  let irStatus = irOk ? '✓ OK' : '✗ LOW';
+  document.getElementById('irpiPm').textContent = l.irpiPmLabel
+    .replace('{r10}', r10.value)
+    .replace('{min}', minIR)
+    .replace('{status}', irOk ?
+      (document.documentElement.lang === 'fr' ? 'OK' : document.documentElement.lang === 'ar' ? 'مقبول' : 'PASS') :
+      (document.documentElement.lang === 'fr' ? 'FAIBLE' : document.documentElement.lang === 'ar' ? 'منخفض' : 'LOW'));
+
+  const badge = document.getElementById('irpiBadge');
+  const note = document.getElementById('irpiNote');
+
+  if (!irOk) {
+    badge.textContent = '✗ FAIL — IR below minimum';
+    badge.className = 'badge badge-fail';
+    note.textContent = 'R₁₀ = ' + r10.value + ' MΩ is below the minimum ' + minIR + ' MΩ required at ' + voltage + ' VDC.';
+  } else if (pi >= 2.0) {
+    badge.textContent = '✓ PASS';
+    badge.className = 'badge badge-pass';
+    note.textContent = l.irpiNoteOk;
+  } else if (pi >= 1.2) {
+    badge.textContent = '⚠ ACCEPTABLE';
+    badge.className = 'badge badge-warn';
+    note.textContent = l.irpiNoteAccept;
+  } else {
+    badge.textContent = '✗ FAIL — Low PI';
+    badge.className = 'badge badge-fail';
+    note.textContent = l.irpiNoteLow;
+  }
+
+  // Draw chart
+  chartBox.style.display = 'block';
+  document.getElementById('noIrpiChartData').style.display = 'none';
+  const ctx = document.getElementById('irpiChart').getContext('2d');
+  if (irpiChart) { irpiChart.destroy(); irpiChart = null; }
+
+  irpiChart = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: document.documentElement.lang === 'fr' ? 'Résistance d\'isolement (MΩ)' :
+                document.documentElement.lang === 'ar' ? 'مقاومة العزل (ميجا أوم)' : 'Insulation Resistance (MΩ)',
+        data: data.map(d => ({ x: d.time, y: d.value })),
+        borderColor: '#2980b9',
+        backgroundColor: 'rgba(41,128,185,0.6)',
+        tension: 0.4,
+        showLine: true,
+        fill: true,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ctx.parsed.x + ' min → ' + ctx.parsed.y.toFixed(2) + ' MΩ';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: document.documentElement.lang === 'fr' ? 'Temps (min)' :
+                   document.documentElement.lang === 'ar' ? 'الوقت (دقيقة)' : 'Time (min)' },
+          min: 0,
+        },
+        y: {
+          title: { display: true, text: document.documentElement.lang === 'fr' ? 'Résistance (MΩ)' :
+                   document.documentElement.lang === 'ar' ? 'المقاومة (ميجا أوم)' : 'Resistance (MΩ)' },
+          beginAtZero: false,
+        }
+      }
+    }
+  });
+
+  box.classList.add('show');
+}
+
+function clearIRPI() {
+  IRPI_TIMES.forEach(t => {
+    document.getElementById(t.id).value = '';
+  });
+  document.getElementById('irpiResult').classList.remove('show');
+  document.getElementById('irpiChartBox').style.display = 'none';
+  if (irpiChart) { irpiChart.destroy(); irpiChart = null; }
+}
+
+// ===== DC RESISTANCE =====
+function calcDCR() {
+  const rMeas = parseFloat(document.getElementById('dcrMeasured').value);
+  const tMeas = parseFloat(document.getElementById('dcrTemp').value);
+  const box = document.getElementById('dcrResult');
+  if (!rMeas || rMeas <= 0 || tMeas === undefined || isNaN(tMeas)) {
+    box.classList.add('show');
+    document.getElementById('dcrCorrVal').textContent = '—';
+    document.getElementById('dcrFormula').textContent = 'Enter valid values.';
+    return;
+  }
+  // Copper correction: R2 = R1 * (234.5 + T2) / (234.5 + T1)
+  const r25 = rMeas * (234.5 + 25) / (234.5 + tMeas);
+  document.getElementById('dcrCorrVal').textContent = r25.toFixed(5) + ' Ω';
+  document.getElementById('dcrFormula').textContent =
+    `R₂₅ = ${rMeas} × (234.5 + 25) / (234.5 + ${tMeas}) = ${r25.toFixed(5)} Ω`;
+  box.classList.add('show');
+}
+function clearDCR() {
+  document.getElementById('dcrMeasured').value = '';
+  document.getElementById('dcrTemp').value = '';
+  document.getElementById('dcrResult').classList.remove('show');
+}
+
+// ===== AC IMPEDANCE =====
+let acData = { up: [], down: [] };
+let stepCounter = { up: 0, down: 0 };
+let acChart = null;
+
+function addStep(dir) {
+  const container = document.getElementById(dir === 'up' ? 'upSteps' : 'downSteps');
+  const idx = stepCounter[dir]++;
+  const row = document.createElement('div');
+  row.className = 'step-row';
+  row.id = `step-${dir}-${idx}`;
+  const v = dir === 'up' ? (10 + idx * 10) : (100 - idx * 10);
+  row.innerHTML = `
+    <span class="step-label">${v}V</span>
+    <input type="number" step="0.01" min="0" placeholder="I (A)" class="step-current" data-dir="${dir}" data-idx="${idx}">
+    <span style="font-size:0.75rem;color:var(--text-light)">A</span>
+    <button class="btn btn-danger" style="padding:2px 8px;font-size:0.7rem;" onclick="removeStep('${dir}',${idx})">✕</button>
+  `;
+  container.appendChild(row);
+}
+function removeStep(dir, idx) {
+  const el = document.getElementById(`step-${dir}-${idx}`);
+  if (el) el.remove();
+}
+
+function calcACImp() {
+  const upCurrents = document.querySelectorAll('#upSteps .step-current');
+  const downCurrents = document.querySelectorAll('#downSteps .step-current');
+  let upData = [], downData = [];
+  upCurrents.forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (!isNaN(v) && v > 0) {
+      const idx = parseInt(inp.dataset.idx);
+      upData.push({ v: 10 + idx * 10, i: v, z: (10 + idx * 10) / v });
+    }
+  });
+  downCurrents.forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (!isNaN(v) && v > 0) {
+      const idx = parseInt(inp.dataset.idx);
+      downData.push({ v: 100 - idx * 10, i: v, z: (100 - idx * 10) / v });
+    }
+  });
+  // Sort
+  upData.sort((a,b) => a.v - b.v);
+  downData.sort((a,b) => a.v - b.v);
+
+  const box = document.getElementById('acimpResult');
+  const analysis = document.getElementById('acimpAnalysis');
+  const canvas = document.getElementById('acChart');
+  const noData = document.getElementById('noChartData');
+
+  if (upData.length < 2 && downData.length < 2) {
+    box.classList.add('show');
+    analysis.innerHTML = '<span style="color:var(--danger);font-weight:600;">Need at least 2 data points for each direction.</span>';
+    noData.style.display = 'block';
+    if (acChart) { acChart.destroy(); acChart = null; }
+    return;
+  }
+
+  noData.style.display = 'none';
+
+  // Draw chart
+  const ctx = canvas.getContext('2d');
+  if (acChart) { acChart.destroy(); acChart = null; }
+
+  const datasets = [];
+  if (upData.length > 1) {
+    datasets.push({
+      label: '⬆ Up (Z)',
+      data: upData.map(d => ({ x: d.v, y: d.z })),
+      borderColor: '#2980b9',
+      backgroundColor: 'rgba(41,128,185,0.1)',
+      tension: 0.3,
+      showLine: true,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+    });
+  }
+  if (downData.length > 1) {
+    datasets.push({
+      label: '⬇ Down (Z)',
+      data: downData.map(d => ({ x: d.v, y: d.z })),
+      borderColor: '#e67e22',
+      backgroundColor: 'rgba(230,126,34,0.1)',
+      tension: 0.3,
+      showLine: true,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+    });
+  }
+
+  acChart = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ctx.parsed.x + 'V, Z=' + ctx.parsed.y.toFixed(2) + ' Ω';
+            }
+          }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Voltage (V)' } },
+        y: { title: { display: true, text: 'Impedance Z (Ω)' } }
+      }
+    }
+  });
+
+  // Analysis
+  let analysisText = '';
+  let hasStep = false;
+
+  // Check for step change in up data
+  if (upData.length > 2) {
+    for (let i = 1; i < upData.length; i++) {
+      const diff = Math.abs(upData[i].z - upData[i-1].z);
+      const avgZ = (upData[i].z + upData[i-1].z) / 2;
+      if (avgZ > 0 && diff / avgZ > 0.15) {
+        hasStep = true;
+        break;
+      }
+    }
+  }
+
+  if (hasStep) {
+    analysisText = '<span style="color:var(--danger);font-weight:600;">⚠ Step change detected in impedance — possible shorted turns!</span>';
+  } else {
+    analysisText = '<span style="color:var(--success);font-weight:600;">✓ No significant step change. Rotor appears healthy.</span>';
+  }
+
+  // Check closure (if both up and down exist)
+  if (upData.length > 0 && downData.length > 0) {
+    const firstUp = upData[0].z;
+    const lastDown = downData[downData.length - 1].z;
+    const closureDiff = Math.abs(firstUp - lastDown);
+    if (closureDiff / ((firstUp + lastDown) / 2) > 0.1) {
+      analysisText += '<br><span style="color:var(--warning);font-weight:600;">⚠ Path does not close — hysteresis or possible shorted turns.</span>';
+    } else {
+      analysisText += '<br><span style="color:var(--success);font-weight:600;">✓ Path closes properly.</span>';
+    }
+  }
+
+  analysis.innerHTML = analysisText;
+  box.classList.add('show');
+}
+
+function clearACImp() {
+  document.getElementById('upSteps').innerHTML = '';
+  document.getElementById('downSteps').innerHTML = '';
+  stepCounter = { up: 0, down: 0 };
+  acData = { up: [], down: [] };
+  document.getElementById('acimpResult').classList.remove('show');
+  document.getElementById('noChartData').style.display = 'block';
+  if (acChart) { acChart.destroy(); acChart = null; }
+}
+
+// ===== RSO =====
+function calcRSO() {
+  const diff = parseFloat(document.getElementById('rsoCh1').value);
+  const blip = document.getElementById('rsoBlip').value;
+  const box = document.getElementById('rsoResult');
+  const analysis = document.getElementById('rsoAnalysis');
+  const traceLine = document.getElementById('rsoTraceLine');
+  const blipDot = document.getElementById('rsoBlipDot');
+  const blipText = document.getElementById('rsoBlipText');
+  const traceLabel = document.getElementById('rsoTraceLabel');
+
+  const l = LANG[document.documentElement.lang] || LANG.en;
+
+  if (!blip || isNaN(diff)) {
+    box.classList.add('show');
+    analysis.innerHTML = '<span style="color:var(--danger);">' + l.rsoResultInvalid + '</span>';
+    return;
+  }
+
+  if (blip === 'no' && Math.abs(diff) < 0.01) {
+    // Healthy
+    analysis.innerHTML = '<span style="color:var(--success);font-weight:600;">' + l.rsoResultHealthy + '</span>';
+    traceLine.setAttribute('points', '50,80 150,80 250,80 350,80 450,80 550,80');
+    traceLine.setAttribute('stroke', '#27ae60');
+    blipDot.setAttribute('display', 'none');
+    blipText.setAttribute('display', 'none');
+    traceLabel.textContent = '✓ ' + (l.rsoHealthy || 'Flat line — No shorted turns');
+    traceLabel.setAttribute('fill', '#27ae60');
+  } else if (blip === 'minor') {
+    analysis.innerHTML = '<span style="color:var(--warning);font-weight:600;">' + l.rsoResultMinor + '</span>';
+    traceLine.setAttribute('points', '50,80 150,80 200,80 250,60 300,50 350,60 400,80 450,80 550,80');
+    traceLine.setAttribute('stroke', '#f39c12');
+    blipDot.setAttribute('display', 'block');
+    blipDot.setAttribute('cx', '300');
+    blipDot.setAttribute('cy', '40');
+    blipText.setAttribute('display', 'block');
+    blipText.setAttribute('x', '300');
+    blipText.setAttribute('y', '28');
+    traceLabel.textContent = '⚠ ' + (l.rsoResultMinor.replace(/<[^>]*>/g,'').substring(0,50));
+    traceLabel.setAttribute('fill', '#f39c12');
+  } else {
+    // Fault
+    analysis.innerHTML = '<span style="color:var(--danger);font-weight:600;">' + l.rsoResultFault + '</span>';
+    traceLine.setAttribute('points', '50,80 150,80 200,80 250,40 300,20 350,40 400,80 450,80 550,80');
+    traceLine.setAttribute('stroke', '#e74c3c');
+    blipDot.setAttribute('display', 'block');
+    blipDot.setAttribute('cx', '300');
+    blipDot.setAttribute('cy', '18');
+    blipText.setAttribute('display', 'block');
+    blipText.setAttribute('x', '300');
+    blipText.setAttribute('y', '8');
+    traceLabel.textContent = '✗ ' + (l.rsoFault || 'Shorted turns detected');
+    traceLabel.setAttribute('fill', '#e74c3c');
+  }
+  box.classList.add('show');
+}
+
+function clearRSO() {
+  document.getElementById('rsoCh1').value = '';
+  document.getElementById('rsoBlip').value = '';
+  document.getElementById('rsoResult').classList.remove('show');
+  document.getElementById('rsoTraceLine').setAttribute('points', '50,80 150,80 250,80 350,80 450,80 550,80');
+  document.getElementById('rsoTraceLine').setAttribute('stroke', '#27ae60');
+  document.getElementById('rsoBlipDot').setAttribute('display', 'none');
+  document.getElementById('rsoBlipText').setAttribute('display', 'none');
+  const l = LANG[document.documentElement.lang] || LANG.en;
+  document.getElementById('rsoTraceLabel').textContent = '✓ ' + (l.rsoHealthy || 'Flat line — No shorted turns');
+  document.getElementById('rsoTraceLabel').setAttribute('fill', '#27ae60');
+}
+
+// Init: add default rows for AC impedance
+addStep('up'); addStep('up'); addStep('up');
+addStep('down'); addStep('down'); addStep('down');
+// Init: build IRPI time grid and show initial voltage info
+buildIrpiGrid();
+updateIrpiVoltage();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</body>
+</html>
